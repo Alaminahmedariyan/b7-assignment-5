@@ -1,0 +1,32 @@
+model GearItem {
+  id             String  @id @default(cuid())
+  name           String
+  slug           String  @unique
+  description    String
+  brand          String?
+  pricePerDay    Decimal @db.Decimal(10, 2)
+  originalPricePerDay Decimal? @db.Decimal(10, 2)
+  totalQuantity  Int     @default(1)
+  specifications Json?
+  
+  isListed Boolean @default(true)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  providerId String
+  provider   User   @relation("ProviderGearItems", fields: [providerId], references: [id], onDelete: Restrict)
+
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  images      GearImage[]
+  rentalItems RentalOrderItem[]
+  reviews     Review[]
+
+  @@index([providerId])
+  @@index([categoryId])
+  @@index([isListed])
+  @@map("gear_items")
+}
