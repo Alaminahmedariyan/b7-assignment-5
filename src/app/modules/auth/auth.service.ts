@@ -96,15 +96,26 @@ const loginWithGoogle = async (idToken: string) => {
 
     payload = ticket.getPayload();
   } catch {
-    throw new AppError(StatusCodes.UNAUTHORIZED, "Invalid Google token.");
+    throw new AppError(
+      StatusCodes.UNAUTHORIZED,
+      "Invalid Google token."
+    );
   }
 
   if (!payload?.email || !payload.email_verified) {
-    throw new AppError(StatusCodes.UNAUTHORIZED, "Google account email is not verified.");
+    throw new AppError(
+      StatusCodes.UNAUTHORIZED,
+      "Google account email is not verified."
+    );
   }
 
-  let user = await prisma.user.findUnique({ where: { email: payload.email } });
+  let user = await prisma.user.findUnique({
+    where: {
+      email: payload.email,
+    },
+  });
 
+  // Create user if not exists
   if (!user) {
     user = await prisma.user.create({
       data: {
@@ -113,15 +124,37 @@ const loginWithGoogle = async (idToken: string) => {
         provider: "GOOGLE",
         password: null,
         status: "ACTIVE",
+
+        // ✅ Save Google profile picture
+        image: payload.picture ?? null,
+      },
+    });
+  }
+
+  // Optional: update image if Google picture changed
+  else if (!user.image && payload.picture) {
+    user = await prisma.user.update({
+      where: {
+        id: user.id,
+      },
+      data: {
+        image: payload.picture,
       },
     });
   }
 
   if (user.status === "SUSPENDED") {
-    throw new AppError(StatusCodes.FORBIDDEN, "Your account has been suspended.");
+    throw new AppError(
+      StatusCodes.FORBIDDEN,
+      "Your account has been suspended."
+    );
   }
 
-  const jwtPayload = { id: user.id, email: user.email, role: user.role };
+  const jwtPayload = {
+    id: user.id,
+    email: user.email,
+    role: user.role,
+  };
 
   const accessToken = jwtUtils.createToken(
     jwtPayload,
@@ -135,7 +168,11 @@ const loginWithGoogle = async (idToken: string) => {
     config.jwt.refreshExpiresIn as SignOptions["expiresIn"]
   );
 
-  return { accessToken, refreshToken, role: user.role };
+  return {
+    accessToken,
+    refreshToken,
+    role: user.role,
+  };
 };
 
 export const authService = {

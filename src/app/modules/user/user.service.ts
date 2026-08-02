@@ -8,7 +8,16 @@ import AppError from "../../errors/appError";
 import { Prisma, Role, UserStatus } from "../../../../generated/prisma/client";
 
 const registerUserIntoDB = async (payload: RegisterUserPayload) => {
-  const { name, email, password, phone, address, nidUrl, role} = payload;
+  const {
+    name,
+    email,
+    password,
+    phone,
+    address,
+    nidUrl,
+    role,
+    image,
+  } = payload;
 
   const isUserExist = await prisma.user.findUnique({
     where: {
@@ -17,12 +26,18 @@ const registerUserIntoDB = async (payload: RegisterUserPayload) => {
   });
 
   if (isUserExist) {
-    throw new AppError(StatusCodes.CONFLICT, "User already exists with this email.");
+    throw new AppError(
+      StatusCodes.CONFLICT,
+      "User already exists with this email."
+    );
   }
 
-  const hashedPassword = await bcrypt.hash(password, Number(config.bcrypt.saltRounds));
+  const hashedPassword = await bcrypt.hash(
+    password,
+    Number(config.bcrypt.saltRounds)
+  );
 
-const createdUser = await prisma.user.create({
+  const createdUser = await prisma.user.create({
     data: {
       name,
       email,
@@ -30,9 +45,12 @@ const createdUser = await prisma.user.create({
       phone,
       address,
       nidUrl,
+      image: image ?? null,
       role: role === "PROVIDER" ? "PROVIDER" : "CUSTOMER",
     },
-    omit: { password: true },
+    omit: {
+      password: true,
+    },
   });
 
   return createdUser;
@@ -76,7 +94,10 @@ const updateMyProfileIntoDB = async (
     where: {
       id: userId,
     },
-    data: payload,
+    data: {
+      ...payload,
+      image: payload.image ?? user.image,
+    },
     omit: {
       password: true,
     },

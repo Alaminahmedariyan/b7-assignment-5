@@ -6,6 +6,7 @@ export interface RegisterUserPayload {
   address?: string;
   nidUrl?: string;
   role?: "CUSTOMER" | "PROVIDER";
+  image?: string;
 }
 
 export interface UpdateProfilePayload {
@@ -14,6 +15,7 @@ export interface UpdateProfilePayload {
   address?: string;
   nidUrl?: string;
   role?: "CUSTOMER" | "PROVIDER";
+  image?: string;
 }
 
 export interface ChangePasswordPayload {

@@ -16,7 +16,7 @@ const prisma = new PrismaClient({
 });
 
 async function main() {
-  const adminEmail = "admin@gearup.com";
+  const adminEmail = "alaminahmedariyan2022@gmail.com";
 
   const existingAdmin = await prisma.user.findUnique({
     where: {
@@ -33,12 +33,12 @@ async function main() {
 
   await prisma.user.create({
     data: {
-      name: "System Admin",
+      name: "Alamin Ahmed",
       email: adminEmail,
       password: hashedPassword,
       role: Role.ADMIN,
-      phone: "01700000000",
-      address: "Dhaka, Bangladesh",
+      phone: "01323396163",
+      address: "Sherpur, Bangladesh",
     },
   });
 

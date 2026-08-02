@@ -23,6 +23,7 @@ const registerUserValidationSchema = z.object({
 
   nidUrl: z.string().url("Invalid NID URL").optional(),
   role: z.enum(["CUSTOMER", "PROVIDER"]).optional(),
+  image: z.string().optional(),
 });
 
 const updateProfileValidationSchema = z.object({
@@ -42,6 +43,7 @@ const updateProfileValidationSchema = z.object({
     .url("Invalid NID URL")
     .optional(),
   role: z.enum(["CUSTOMER", "PROVIDER"]).optional(),
+  image: z.string().optional(),
 });
 
 const changePasswordValidationSchema = z.object({
