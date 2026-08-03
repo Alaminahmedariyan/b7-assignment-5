@@ -2,10 +2,11 @@ import bcrypt from "bcryptjs";
 import { StatusCodes } from "http-status-codes";
 
 import config from "../../config";
-import { ChangePasswordPayload, RegisterUserPayload, UpdateProfilePayload } from "./user.interface";
+import { ChangePasswordPayload, RegisterUserPayload } from "./user.interface";
 import { prisma } from "../../../lib/prisma";
 import AppError from "../../errors/appError";
 import { Prisma, Role, UserStatus } from "../../../../generated/prisma/client";
+import { fileUploader } from "../../config/cloudinary";
 
 const registerUserIntoDB = async (payload: RegisterUserPayload) => {
   const {
@@ -73,30 +74,46 @@ const getMyProfileFromDB = async (userId: string) => {
   return user;
 };
 
+// The single source of truth for profile updates — handles both the
+// plain text fields AND an optional new avatar file (multer + Cloudinary),
+// same pattern as gearService.createGearIntoDB.
 const updateMyProfileIntoDB = async (
   userId: string,
-  payload: UpdateProfilePayload
+  payload: {
+    name?: string;
+    phone?: string;
+    address?: string;
+  },
+  imageFile?: Express.Multer.File,
 ) => {
-  const user = await prisma.user.findUnique({
-    where: {
-      id: userId,
-    },
+  const existingUser = await prisma.user.findUnique({
+    where: { id: userId },
   });
 
-  if (!user) {
-    throw new AppError(
-      StatusCodes.NOT_FOUND,
-      "User not found."
+  if (!existingUser) {
+    throw new AppError(StatusCodes.NOT_FOUND, "User not found.");
+  }
+
+  // If a new avatar was uploaded, push it to Cloudinary and grab its
+  // secure_url. No new file → keep the existing avatar untouched.
+  let imageUrl: string | undefined = undefined;
+
+  if (imageFile) {
+    const uploaded = await fileUploader.uploadFileToCloudinary(
+      imageFile.buffer,
+      imageFile.originalname,
+      "profile-images", // separate folder from "gear-rental" so avatars don't mix with gear photos
     );
+    imageUrl = uploaded.secure_url;
   }
 
   const updatedUser = await prisma.user.update({
-    where: {
-      id: userId,
-    },
+    where: { id: userId },
     data: {
-      ...payload,
-      image: payload.image ?? user.image,
+      ...(payload.name !== undefined && { name: payload.name }),
+      ...(payload.phone !== undefined && { phone: payload.phone }),
+      ...(payload.address !== undefined && { address: payload.address }),
+      ...(imageUrl !== undefined && { image: imageUrl }),
     },
     omit: {
       password: true,
@@ -241,6 +258,7 @@ const updateUserStatusIntoDB = async (
     omit: { password: true },
   });
 };
+
 export const userService = {
   registerUserIntoDB,
   getMyProfileFromDB,

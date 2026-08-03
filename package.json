@@ -53,6 +53,7 @@
     "multer": "^2.2.0",
     "multer-storage-cloudinary": "^4.0.0",
     "pg": "^8.22.0",
+    "resend": "^6.18.1",
     "slugify": "^1.6.9",
     "stripe": "^22.3.0",
     "tsup": "^8.5.1",

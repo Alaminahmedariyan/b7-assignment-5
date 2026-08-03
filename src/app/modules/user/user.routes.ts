@@ -1,9 +1,13 @@
 import { Router } from "express";
-import { userController } from "./user.controller";
+
+import { auth } from "../../middlewares/auth";
 import { validateRequest } from "../../middlewares/validateRequest";
+import { upload } from "../../middlewares/multer";
+
+import { userController } from "./user.controller";
 import { userValidation } from "./user.validation";
 import { Role } from "../../../../generated/prisma/enums";
-import { auth } from "../../middlewares/auth";
+
 const router = Router();
 
 router.post(
@@ -16,12 +20,20 @@ router.get(
   auth(Role.CUSTOMER, Role.PROVIDER, Role.ADMIN),
   userController.getMyProfile
 );
+
+// NEW: upload.single("image") added — same pattern as gear routes.
+// Multer parses the multipart form, puts the file in req.file, and
+// leaves the other text fields (name, phone, address) in req.body
+// as plain strings — which is exactly what updateProfileValidationSchema
+// expects.
 router.patch(
   "/me",
   auth(Role.CUSTOMER, Role.PROVIDER, Role.ADMIN),
+  upload.single("image"),
   validateRequest(userValidation.updateProfileValidationSchema),
   userController.updateMyProfile
 );
+
 router.patch(
   "/change-password",
   auth(Role.CUSTOMER, Role.PROVIDER, Role.ADMIN),

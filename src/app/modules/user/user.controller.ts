@@ -29,8 +29,16 @@ const getMyProfile = catchAsync(async (req: Request, res: Response) => {
     data: user,
   });
 });
+
+// CHANGED: now passes req.file (from upload.single("image")) as a
+// separate argument — same idea as gearController.createGear passing
+// req.files alongside req.body.
 const updateMyProfile = catchAsync(async (req: Request, res: Response) => {
-  const user = await userService.updateMyProfileIntoDB(req.user!.id, req.body);
+  const user = await userService.updateMyProfileIntoDB(
+    req.user!.id,
+    req.body,
+    req.file as Express.Multer.File | undefined,
+  );
 
   sendResponse(res, {
     success: true,
@@ -50,6 +58,7 @@ const changePassword = catchAsync(async (req: Request, res: Response) => {
     data: null,
   });
 });
+
 const getAllUsers = catchAsync(async (req: Request, res: Response) => {
   const result = await userService.getAllUsersFromDB(req.query as any);
 
@@ -75,6 +84,7 @@ const updateUserStatus = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+
 export const userController = {
   registerUser,
   getMyProfile,

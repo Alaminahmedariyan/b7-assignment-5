@@ -16,9 +16,20 @@ router.patch("/:id/moderate", auth(Role.ADMIN), gearController.moderateGear);
 router.get("/my-gears", auth(Role.PROVIDER), gearController.getMyGears);
 router.get("/:id/availability", gearController.checkAvailability);
 router.get("/:id", gearController.getSingleGear);
-router.post( "/", auth(Role.PROVIDER), upload.array("images", 10),
- validateRequest(gearValidation.createGearValidationSchema),  gearController.createGear);
-router.patch("/:id", auth(Role.PROVIDER), validateRequest(gearValidation.updateGearValidationSchema), gearController.updateGear);
+router.post(
+  "/",
+  auth(Role.PROVIDER),
+  upload.array("images", 10),
+  validateRequest(gearValidation.createGearValidationSchema),
+  gearController.createGear,
+);
+router.patch(
+  "/:id",
+  auth(Role.PROVIDER),
+  upload.array("images", 10),
+  validateRequest(gearValidation.updateGearValidationSchema),
+  gearController.updateGear
+);
 router.delete("/:id", auth(Role.PROVIDER), gearController.deleteGear);
 
 export const gearRoutes = router;

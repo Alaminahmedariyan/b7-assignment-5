@@ -6,6 +6,7 @@ import { catchAsync } from "../../utils/catchAsync";
 import { sendResponse } from "../../utils/sendResponse";
 
 import { authService } from "./auth.service";
+import { ForgotPasswordPayload, ResetPasswordPayload } from "./auth.interface";
 
 const loginUser = catchAsync(async (req: Request, res: Response) => {
   const result = await authService.loginUser(req.body);
@@ -89,9 +90,38 @@ const googleLogin = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const forgotPassword = catchAsync(async (req, res) => {
+  await authService.forgotPassword(
+    req.body as ForgotPasswordPayload
+  );
+
+  sendResponse(res, {
+    success: true,
+    statusCode: StatusCodes.OK,
+    message:
+      "If an account exists, a password reset email has been sent.",
+    data: null,
+  });
+});
+
+const resetPassword = catchAsync(async (req, res) => {
+  await authService.resetPassword(
+    req.body as ResetPasswordPayload
+  );
+
+  sendResponse(res, {
+    success: true,
+    statusCode: StatusCodes.OK,
+    message: "Password reset successfully.",
+    data: null,
+  });
+});
+
 export const authController = {
   loginUser,
   refreshToken,
   logoutUser,
   googleLogin,
+  forgotPassword,
+  resetPassword,
 };

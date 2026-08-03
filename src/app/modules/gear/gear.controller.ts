@@ -85,7 +85,21 @@ const getSingleGear = catchAsync(async (req: Request, res: Response) => {
 });
 
 const updateGear = catchAsync(async (req: Request, res: Response) => {
-  const result = await gearService.updateGearIntoDB(req.user!.id, req.params.id as string, req.body);
+  if (
+    req.body.specifications &&
+    typeof req.body.specifications === "string"
+  ) {
+    req.body.specifications = JSON.parse(req.body.specifications);
+  }
+
+  const providerId = req.user!.id;
+
+  const result = await gearService.updateGearIntoDB(
+    providerId,
+    req.params.id as string,
+    req.body,
+    req.files as Express.Multer.File[]
+  );
 
   sendResponse(res, {
     success: true,

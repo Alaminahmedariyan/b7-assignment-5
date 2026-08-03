@@ -225,7 +225,7 @@ const getAllGearsFromDB = async (query: GearQuery) => {
       category: true,
 
       provider: {
-        select: { id: true, name: true, email: true, address: true }, // ← address যোগ হলো
+        select: { id: true, name: true, email: true, address: true },
       },
 
       images: true,
@@ -438,10 +438,19 @@ const getSingleGearFromDB = async (gearId: string) => {
   };
 };
 
+// Replace ONLY the updateGearIntoDB function in gear.service.ts with
+// this version — everything else in the file (createGearIntoDB,
+// getAllGearsFromDB, etc.) stays exactly as it is.
+
 const updateGearIntoDB = async (
   providerId: string,
   gearId: string,
-  payload: UpdateGearPayload
+  payload: UpdateGearPayload,
+  files: Express.Multer.File[] = [], // FIX: was missing — controller
+                                       // already sends this as the 4th
+                                       // argument, so the function
+                                       // signature must accept it or
+                                       // TypeScript rejects the call.
 ) => {
   // Find Gear
   const gear = await prisma.gearItem.findUnique({
@@ -536,30 +545,75 @@ const updateGearIntoDB = async (
     updateData.slug = slug;
   }
 
-  const updatedGear =
-    await prisma.gearItem.update({
-      where: {
-        id: gearId,
-      },
+  // NEW: if new images were uploaded during edit, push them to
+  // Cloudinary (same helper createGearIntoDB uses) and append them
+  // to the gear's existing images — doesn't touch/remove old ones.
+  const uploadedImages: { url: string; publicId: string }[] =
+    files.length > 0
+      ? await Promise.all(
+          files.map(async (file) => {
+            const result = await uploadFileToCloudinary(
+              file.buffer,
+              file.originalname
+            );
 
-      data: updateData,
+            return {
+              url: result.secure_url,
+              publicId: result.public_id,
+            };
+          })
+        )
+      : [];
 
-      include: {
-        images: true,
+  try {
+    const updatedGear = await prisma.$transaction(async (tx) => {
+      const updated = await tx.gearItem.update({
+        where: {
+          id: gearId,
+        },
+        data: updateData,
+      });
 
-        category: true,
+      if (uploadedImages.length > 0) {
+        // isPrimary stays false for all newly added images — the
+        // existing primary image (set at creation) is left as-is.
+        await tx.gearImage.createMany({
+          data: uploadedImages.map((image) => ({
+            imageUrl: image.url,
+            gearItemId: updated.id,
+            isPrimary: false,
+          })),
+        });
+      }
 
-        provider: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
+      return tx.gearItem.findUnique({
+        where: { id: updated.id },
+        include: {
+          images: true,
+          category: true,
+          provider: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
           },
         },
-      },
+      });
     });
 
-  return updatedGear;
+    return updatedGear;
+  } catch (error) {
+    if (uploadedImages.length > 0) {
+      await Promise.all(
+        uploadedImages.map((image) =>
+          deleteFileFromCloudinary(image.publicId)
+        )
+      );
+    }
+
+    throw error;
+  }
 };
 
 const deleteGearFromDB = async (providerId: string, gearId: string) => {

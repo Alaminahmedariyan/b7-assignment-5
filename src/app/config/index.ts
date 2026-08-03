@@ -59,12 +59,19 @@ const config = {
     saltRounds: getNumberEnv("BCRYPT_SALT_ROUNDS", 10),
   },
 
-  jwt: {
-    secret: getEnv("JWT_ACCESS_SECRET"),
-    refreshSecret: getEnv("JWT_REFRESH_SECRET"),
-    expiresIn: getEnv("JWT_ACCESS_EXPIRES_IN", "1d"),
-    refreshExpiresIn: getEnv("JWT_REFRESH_EXPIRES_IN", "30d"),
-  },
+jwt: {
+  secret: getEnv("JWT_ACCESS_SECRET"),
+  refreshSecret: getEnv("JWT_REFRESH_SECRET"),
+
+  resetPasswordSecret: getEnv("JWT_RESET_PASSWORD_SECRET"),
+  resetPasswordExpiresIn: getEnv(
+    "JWT_RESET_PASSWORD_EXPIRES_IN",
+    "15m"
+  ),
+
+  expiresIn: getEnv("JWT_ACCESS_EXPIRES_IN", "1d"),
+  refreshExpiresIn: getEnv("JWT_REFRESH_EXPIRES_IN", "30d"),
+},
 
   cloudinary: {
     cloudName: getEnv("CLOUDINARY_CLOUD_NAME"),
@@ -77,6 +84,10 @@ const config = {
     secretKey: getEnv("STRIPE_SECRET_KEY"),
     webhookSecret: getEnv("STRIPE_WEBHOOK_SECRET"),
   },
+    email: {
+    resendApiKey: getEnv("RESEND_API_KEY"),
+    from: getEnv("EMAIL_FROM"),
+  }
 } as const;
 
 export default config;
